@@ -1,26 +1,66 @@
 import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import axios from 'axios';
 
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+import './App.css';
+import QueryColumn from './components/QueryColumn';
+import ReferenceColumn from './components/ReferenceColumn';
+
+class App extends React.Component {
+  state = { isLoading: false, referenceImages: [], error: null };
+
+  componentDidMount() {
+    this.fetchReferenceImages();
+  }
+
+  fetchReferenceImages = async () => {
+    this.setState({ isLoading: true });
+    try {
+      let res = await axios.get('/referenceImages');
+      this.setState({ isLoading: false, referenceImages: res.data });
+    } catch (err) {
+      this.setState({ isLoading: false, error: err.message });
+    }
+  };
+
+  pushReferenceImage = (img) => {
+    let imgs = new Set(this.state.referenceImages);
+    imgs.add(img);
+    imgs.delete(undefined);
+    this.setState({ referenceImages: Array.from(imgs) });
+  };
+
+  render() {
+    const { isLoading, error, referenceImages } = this.state;
+    return (
+      <div className="App">
+        <h2>Reconhecimento facial PoC</h2>
+        {isLoading ? (
+          'Carregando imagens de referência...'
+        ) : (
+          <input
+            type="button"
+            value="Recarregar imagens"
+            onClick={this.fetchReferenceImages}
+          />
+        )}
+        <div style={{ color: 'red' }}>{JSON.parse(error)}</div>
+        <div className="row">
+          <div className="column">
+            <QueryColumn
+              referenceImages={referenceImages}
+              pushReferenceImage={this.pushReferenceImage}
+            />
+          </div>
+          <div className="column">
+            <ReferenceColumn
+              referenceImages={referenceImages}
+              pushReferenceImage={this.pushReferenceImage}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
 }
 
 export default App;
